@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dano's Challengers Realm</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://www.upload.ee/image/19844951/Gemini_Generated_Image_ax952uax952uax95-removebg-preview.png">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: '#4a6b3d',
+                        accent: '#a39171',
+                        darkBg: '#0a0b08',
+                        cardBg: '#0f110d',
+                        panelBg: '#1a1c18',
+                        borderColor: '#2a2c26'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- PapaParse -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <style>
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .btn-active { background-color: #4a6b3d; color: white; box-shadow: 0 0 15px rgba(74,107,61,0.4); }
+        .btn-inactive { color: #8c8c8c; }
+        .btn-inactive:hover { background-color: #1a1c18; color: #a39171; }
+    </style>
+</head>
+<body class="bg-darkBg text-white font-sans selection:bg-brand selection:text-white min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-[#141512] border-b border-accent p-4 sticky top-0 z-10 shadow-lg">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <img src="https://www.upload.ee/image/19844951/Gemini_Generated_Image_ax952uax952uax95-removebg-preview.png" alt="Logo" class="h-16 w-16 object-contain drop-shadow-[0_0_8px_rgba(163,145,113,0.5)]">
+                <div>
+                    <h1 class="text-3xl font-black text-[#e2e2e2] tracking-wider uppercase">Dano's <span class="text-brand">Challengers</span> Realm</h1>
+                    <p class="text-sm text-accent font-semibold tracking-widest">NORTH AMERICAN CHALLENGERS</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="https://x.com/CoD_Dano" target="_blank" class="bg-cardBg border border-borderColor px-3 py-1.5 rounded hover:border-brand hover:bg-panelBg transition-colors flex items-center gap-1.5 text-accent hover:text-brand font-bold text-sm">
+                    <span class="text-brand font-black text-base">@</span>
+                    <span class="hidden md:inline">CoD_Dano</span>
+                </a>
+                <a href="https://discord.gg/78BXetCSpU" target="_blank" class="bg-cardBg border border-borderColor px-3 py-1.5 rounded hover:border-brand hover:bg-panelBg transition-colors flex items-center gap-2 text-accent hover:text-brand text-sm font-semibold">
+                    <i class="fa-brands fa-discord text-lg"></i> <span class="hidden md:inline">Join Discord</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 md:p-6">
+        <!-- Navigation Tabs -->
+        <nav class="flex flex-wrap gap-2 mb-8 bg-[#141512] p-2 rounded-lg border border-borderColor" id="tab-nav">
+            <button onclick="switchTab('rosters')" class="tab-btn btn-active flex-1 min-w-[110px] flex items-center justify-center gap-2 py-3 px-3 rounded font-bold transition-all duration-200 text-sm" data-target="rosters">
+                <i class="fa-solid fa-users"></i> Rosters
+            </button>
+            <button onclick="switchTab('points')" class="tab-btn btn-inactive flex-1 min-w-[110px] flex items-center justify-center gap-2 py-3 px-3 rounded font-bold transition-all duration-200 text-sm" data-target="points">
+                <i class="fa-solid fa-trophy"></i> Pro Points
+            </button>
+            <button onclick="switchTab('standings')" class="tab-btn btn-inactive flex-1 min-w-[110px] flex items-center justify-center gap-2 py-3 px-3 rounded font-bold transition-all duration-200 text-sm" data-target="standings">
+                <i class="fa-solid fa-calendar"></i> Event Results
+            </button>
+            <button onclick="switchTab('stats')" class="tab-btn btn-inactive flex-1 min-w-[110px] flex items-center justify-center gap-2 py-3 px-3 rounded font-bold transition-all duration-200 text-sm" data-target="stats">
+                <i class="fa-solid fa-chart-simple"></i> Statistics
+            </button>
+            <button onclick="switchTab('feed')" class="tab-btn btn-inactive flex-1 min-w-[110px] flex items-center justify-center gap-2 py-3 px-3 rounded font-bold transition-all duration-200 text-sm" data-target="feed">
+                <i class="fa-solid fa-message"></i> News
+            </button>
+        </nav>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="text-center text-accent py-10 font-bold">
+            <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2"></i><br>Syncing Verified Master Sheet...
+        </div>
+
+        <!-- 1. Rosters -->
+        <div id="rosters" class="tab-content active bg-panelBg border border-accent rounded-lg p-5">
+            <h2 class="text-2xl font-bold text-accent mb-5 flex items-center gap-2"><i class="fa-solid fa-users text-brand"></i> Current NA Rosters</h2>
+            <div id="rosters-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4"></div>
+        </div>
+
+        <!-- 2. Pro Points -->
+        <div id="points" class="tab-content bg-panelBg border border-accent rounded-lg p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <h2 class="text-2xl font-bold text-accent flex items-center gap-2"><i class="fa-solid fa-trophy text-brand"></i> NA Pro Points Standings</h2>
+                <div class="flex bg-cardBg rounded-lg p-1 border border-borderColor">
+                    <button onclick="togglePointsView('team')" id="btn-team-points" class="px-4 py-2 rounded font-semibold transition-colors bg-brand text-white">Teams</button>
+                    <button onclick="togglePointsView('player')" id="btn-player-points" class="px-4 py-2 rounded font-semibold transition-colors text-[#8c8c8c] hover:text-accent">Players</button>
+                </div>
+            </div>
+            <div id="team-points-container" class="space-y-4"></div>
+            <div id="player-points-container" class="space-y-4 hidden"></div>
+        </div>
+
+        <!-- 3. Event Results -->
+        <div id="standings" class="tab-content bg-panelBg border border-accent rounded-lg p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <h2 class="text-2xl font-bold text-accent flex items-center gap-2"><i class="fa-solid fa-calendar text-brand"></i> Event Results</h2>
+                <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex bg-cardBg rounded-lg p-1 border border-borderColor">
+                        <button onclick="toggleStandingsView('team')" id="btn-team-standings" class="px-4 py-2 rounded font-semibold transition-colors bg-brand text-white">Teams</button>
+                        <button onclick="toggleStandingsView('player')" id="btn-player-standings" class="px-4 py-2 rounded font-semibold transition-colors text-[#8c8c8c] hover:text-accent">Players</button>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <label class="text-[#8c8c8c] font-bold text-sm">Filter Event:</label>
+                        <select id="standings-event-filter" onchange="updateStandingsFilter(this.value)" class="bg-cardBg text-white border border-borderColor rounded p-2 focus:border-brand outline-none font-semibold">
+                            <option value="All">All Events</option>
+                            <optgroup label="Cups">
+                                <script>for(let i=1; i<=13; i++) document.write(`<option value="Cup ${i}">Cup ${i}</option>`);</script>
+                            </optgroup>
+                            <optgroup label="Elites">
+                                <script>for(let i=1; i<=4; i++) document.write(`<option value="Elite ${i}">Elite ${i}</option>`);</script>
+                            </optgroup>
+                            <optgroup label="Majors">
+                                <script>for(let i=1; i<=4; i++) document.write(`<option value="Major ${i}">Major ${i}</option>`);</script>
+                            </optgroup>
+                            <optgroup label="Minors">
+                                <script>for(let i=1; i<=6; i++) document.write(`<option value="Minor ${i}">Minor ${i}</option>`);</script>
+                            </optgroup>
+                            <optgroup label="Postseason">
+                                <option value="LCQ">LCQ</option>
+                                <option value="Champs">Champs</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auto Team of the Event Banner -->
+            <div id="team-of-event-banner" class="mb-6 p-4 bg-cardBg border border-brand rounded-lg flex items-center justify-between shadow-md hidden">
+                <div class="flex items-center gap-3">
+                    <div class="bg-brand text-white p-3 rounded-lg text-xl"><i class="fa-solid fa-crown"></i></div>
+                    <div>
+                        <h4 class="text-xs uppercase tracking-widest text-accent font-bold">Team of the Event (<span id="toe-event-name"></span>)</h4>
+                        <h3 id="toe-team-name" class="text-xl font-black text-white">--</h3>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span id="toe-placement" class="text-brand font-bold text-lg">#1 Place</span>
+                    <p id="toe-points" class="text-xs text-[#8c8c8c]">0 PP Earned</p>
+                </div>
+            </div>
+
+            <div id="team-standings-container" class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[600px]">
+                    <thead>
+                        <tr class="bg-cardBg text-accent border-b-2 border-brand">
+                            <th class="p-3">Event Name</th><th class="p-3">Type</th><th class="p-3">Team Name</th><th class="p-3">Placement</th><th class="p-3">Points Earned</th>
+                        </tr>
+                    </thead>
+                    <tbody id="team-standings-tbody" class="text-[#e2e2e2]"></tbody>
+                </table>
+            </div>
+            <div id="player-standings-container" class="overflow-x-auto hidden">
+                <table class="w-full text-left border-collapse min-w-[600px]">
+                    <thead>
+                        <tr class="bg-cardBg text-accent border-b-2 border-brand">
+                            <th class="p-3">Event Name</th><th class="p-3">Type</th><th class="p-3">Player Name</th><th class="p-3">Team</th><th class="p-3">Placement</th><th class="p-3">Points Earned</th>
+                        </tr>
+                    </thead>
+                    <tbody id="player-standings-tbody" class="text-[#e2e2e2]"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 4. Statistics Engine -->
+        <div id="stats" class="tab-content bg-panelBg border border-accent rounded-lg p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <h2 class="text-2xl font-bold text-accent flex items-center gap-2"><i class="fa-solid fa-chart-simple text-brand"></i> Statistics Engine</h2>
+                <div class="flex items-center gap-3">
+                    <label class="text-[#8c8c8c] font-bold text-sm">Filter Event:</label>
+                    <select id="stats-event-filter" onchange="updateStatsFilter(this.value)" class="bg-cardBg text-white border border-borderColor rounded p-2 focus:border-brand outline-none font-semibold">
+                        <option value="All">All Events</option>
+                        <optgroup label="Cups">
+                            <script>for(let i=1; i<=13; i++) document.write(`<option value="Cup ${i}">Cup ${i}</option>`);</script>
+                        </optgroup>
+                        <optgroup label="Elites">
+                            <script>for(let i=1; i<=4; i++) document.write(`<option value="Elite ${i}">Elite ${i}</option>`);</script>
+                        </optgroup>
+                        <optgroup label="Majors">
+                            <script>for(let i=1; i<=4; i++) document.write(`<option value="Major ${i}">Major ${i}</option>`);</script>
+                        </optgroup>
+                        <optgroup label="Minors">
+                            <script>for(let i=1; i<=6; i++) document.write(`<option value="Minor ${i}">Minor ${i}</option>`);</script>
+                        </optgroup>
+                        <optgroup label="Postseason">
+                            <option value="LCQ">LCQ</option>
+                            <option value="Champs">Champs</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[500px]">
+                    <thead>
+                        <tr class="bg-cardBg text-accent border-b-2 border-brand select-none">
+                            <th class="p-3">Event Name</th>
+                            <th class="p-3">Player Name</th>
+                            <th class="p-3">Team</th>
+                            <th class="p-3">K/D Ratio</th>
+                            <th class="p-3">Objective Time</th>
+                            <th class="p-3">Damage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-tbody" class="text-[#e2e2e2]"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 5. News Feed -->
+        <div id="feed" class="tab-content bg-panelBg border border-accent rounded-lg p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-accent flex items-center gap-2">
+                        <span class="text-brand font-black text-2xl">@</span> Rumors & News Feed
+                    </h2>
+                    <p class="text-xs text-[#8c8c8c] mt-1">Live posts and updates from @CoD_Dano.</p>
+                </div>
+                <a href="https://x.com/CoD_Dano" target="_blank" class="bg-cardBg border border-borderColor hover:border-brand px-3.5 py-2 rounded text-accent hover:text-brand font-bold text-xs transition-all flex items-center gap-1.5 shadow">
+                    <span class="text-brand font-black">@</span> Follow @CoD_Dano
+                </a>
+            </div>
+            
+            <div class="bg-cardBg rounded-lg border border-borderColor p-4 shadow-inner">
+                <div class="sk-ww-twitter-feed" data-embed-id="25722121"></div>
+                <script src="https://widgets.sociablekit.com/twitter-feed/widget.js" defer></script>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 py-6 bg-[#141512] border-t border-borderColor text-center text-[#8c8c8c] text-sm">
+        &copy; 2026 Dano's Challengers Realm. Data tracking for the NA CoD Challengers scene.
+    </footer>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('btn-active');
+                btn.classList.add('btn-inactive');
+            });
+            document.getElementById(tabId).classList.add('active');
+            document.querySelector(`.tab-btn[data-target="${tabId}"]`).classList.remove('btn-inactive');
+            document.querySelector(`.tab-btn[data-target="${tabId}"]`).classList.add('btn-active');
+        }
+
+        function togglePointsView(view) {
+            if(view === 'team') {
+                document.getElementById('team-points-container').classList.remove('hidden');
+                document.getElementById('player-points-container').classList.add('hidden');
+                document.getElementById('btn-team-points').className = "px-4 py-2 rounded font-semibold transition-colors bg-brand text-white";
+                document.getElementById('btn-player-points').className = "px-4 py-2 rounded font-semibold transition-colors text-[#8c8c8c] hover:text-accent";
+            } else {
+                document.getElementById('team-points-container').classList.add('hidden');
+                document.getElementById('player-points-container').classList.remove('hidden');
+                document.getElementById('btn-player-points').className = "px-4 py-2 rounded font-semibold transition-colors bg-brand text-white";
+                document.getElementById('btn-team-points').className = "px-4 py-2 rounded font-semibold transition-colors text-[#8c8c8c] hover:text-accent";
+            }
+        }
+
+        function toggleStandingsView(view) {
+            if(view === 'team') {
+                document.getElementById('team-standings-container').classList.remove('hidden');
+                document.getElementById('player-standings-container').classList.add('hidden');
+                document.getElementById('btn-team-standings').className = "px-4 py-2 rounded font-semibold transition-colors bg-brand text-white";
+                document.getElementById('btn-player-standings').className = "px-4 py-2 rounded font-semibold transition-colors text-[#8c8c8c] hover:text-accent";
+            } else {
+                document.getElementById('team-standings-container').classList.add('hidden');
+                document.getElementById('player-standings-container').classList.remove('hidden');
+                document.getElementById('btn-player-standings').className = "px-4 py-2 rounded font-semibold transition-colors bg-brand text-white";
+                document.getElementById('btn-team-standings').className = "px-4 py-2 rounded font-semibold transition-colors text-[#8c8c8c] hover:text-accent";
+            }
+        }
+
+        function getVal(row, key) {
+            if (!row) return '';
+            const cleanKey = key.trim().toLowerCase();
+            for (let k in row) {
+                if (k && k.trim().toLowerCase() === cleanKey) {
+                    return row[k] ? row[k].toString().trim() : '';
+                }
+            }
+            return '';
+        }
+
+        function getXUrl(input) {
+            if(!input) return null;
+            input = input.toString().trim();
+            if(!input) return null;
+            if(input.startsWith('http://') || input.startsWith('https://')) return input;
+            if(input.startsWith('@')) input = input.substring(1);
+            return `https://x.com/${input}`;
+        }
+
+        function getFlagHtml(input) {
+            if (!input) return '';
+            input = input.toString().trim();
+            if (!input) return '';
+            let countryCode = null;
+            if (/^[a-zA-Z]{2}$/.test(input)) {
+                countryCode = input.toLowerCase();
+            } else {
+                const chars = Array.from(input);
+                if (chars.length === 2) {
+                    const cp0 = chars[0].codePointAt(0);
+                    const cp1 = chars[1].codePointAt(0);
+                    if (cp0 >= 0x1F1E6 && cp0 <= 0x1F1FF && cp1 >= 0x1F1E6 && cp1 <= 0x1F1FF) {
+                        countryCode = String.fromCharCode(cp0 - 0x1F1E6 + 65, cp1 - 0x1F1E6 + 65).toLowerCase();
+                    }
+                }
+            }
+            if (countryCode) {
+                return `<img src="https://flagcdn.com/w40/${countryCode}.png" alt="${countryCode.toUpperCase()}" class="w-5 h-3.5 object-cover rounded-sm inline-block shrink-0 shadow-sm border border-borderColor/50">`;
+            }
+            return `<span class="text-base shrink-0">${input}</span>`;
+        }
+
+        function renderPlayerRow(label, name, pp, xHandle, flag, prevTeam) {
+            if(!name) return '';
+            const xUrl = getXUrl(xHandle);
+            const flagHtml = getFlagHtml(flag);
+            return `
+                <li class="flex items-center justify-between py-1 border-b border-borderColor/30 last:border-0">
+                    <span class="text-accent font-semibold text-xs uppercase tracking-wider w-16 shrink-0">${label}:</span>
+                    <div class="flex items-center justify-between gap-2 flex-1 min-w-0">
+                        <span class="font-bold text-white text-base md:text-lg tracking-wide truncate flex items-center gap-1.5">
+                            ${flagHtml}
+                            <span class="truncate">${name}</span>
+                            ${pp ? `<span class="text-xs text-brand font-bold">(${pp} PP)</span>` : ''}
+                            ${prevTeam ? `<span class="text-xs text-[#8c8c8c] font-normal italic shrink-0">(ex-${prevTeam})</span>` : ''}
+                        </span>
+                        ${xUrl ? `<a href="${xUrl}" target="_blank" title="View on X" class="bg-cardBg text-accent hover:text-brand border border-borderColor hover:border-brand w-6 h-6 rounded flex items-center justify-center font-black text-xs transition-all shrink-0"><span class="text-brand font-black">@</span></a>` : ''}
+                    </div>
+                </li>`;
+        }
+
+        const ROSTERS_SHEET_ID = '1NrBvFvShYBeZm_NcUCcqXm1a_4xahAoumyPcvTs613w';
+        const DATAHUB_SHEET_ID = '1uV9OjR6snxVsvEoHk5VOWul231FofsYjJ5AyAKO8lmw';
+
+        function fetchSheetData(sheetId, sheetName, callback) {
+            const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=${encodeURIComponent(sheetName)}&_cacheBust=${Date.now()}`;
+            Papa.parse(url, {
+                download: true,
+                header: true,
+                skipEmptyLines: 'greedy',
+                transformHeader: function(h) { return h ? h.trim() : ''; },
+                complete: function(results) { callback(results.data); },
+                error: function(error) { console.error("Error fetching " + sheetName, error); }
+            });
+        }
+
+        let globalDataHub = [];
+
+        function initData() {
+            document.getElementById('loading').classList.remove('hidden');
+            
+            // 1. Fetch Rosters & Pro Points
+            fetchSheetData(ROSTERS_SHEET_ID, 'Rosters', (data) => {
+                const rostersContainer = document.getElementById('rosters-container');
+                const teamPointsCont = document.getElementById('team-points-container');
+                const playerPointsCont = document.getElementById('player-points-container');
+                
+                rostersContainer.innerHTML = '';
+                teamPointsCont.innerHTML = '';
+                playerPointsCont.innerHTML = '';
+
+                let teamList = [];
+                let playerList = [];
+
+                const validRows = data.filter(row => getVal(row, 'Team Name'));
+                validRows.sort((a, b) => {
+                    const ppA = parseFloat(getVal(a, 'Team Total Pro Points')) || 0;
+                    const ppB = parseFloat(getVal(b, 'Team Total Pro Points')) || 0;
+                    return ppB - ppA;
+                });
+
+                validRows.forEach(row => {
+                    const teamName = getVal(row, 'Team Name');
+                    const teamXUrl = getXUrl(getVal(row, 'Team X'));
+                    const teamTotalPP = parseFloat(getVal(row, 'Team Total Pro Points')) || 0;
+
+                    teamList.push({ name: teamName, pp: teamTotalPP });
+
+                    const p1 = getVal(row, 'Player 1');
+                    const p1PP = getVal(row, 'Player 1 Pro Points');
+                    if(p1) playerList.push({ name: p1, team: teamName, pp: parseFloat(p1PP) || 0 });
+
+                    const p2 = getVal(row, 'Player 2');
+                    const p2PP = getVal(row, 'Player 2 Pro Points');
+                    if(p2) playerList.push({ name: p2, team: teamName, pp: parseFloat(p2PP) || 0 });
+
+                    const p3 = getVal(row, 'Player 3');
+                    const p3PP = getVal(row, 'Player 3 Pro Points');
+                    if(p3) playerList.push({ name: p3, team: teamName, pp: parseFloat(p3PP) || 0 });
+
+                    const p4 = getVal(row, 'Player 4');
+                    const p4PP = getVal(row, 'Player 4 Pro Points');
+                    if(p4) playerList.push({ name: p4, team: teamName, pp: parseFloat(p4PP) || 0 });
+
+                    rostersContainer.innerHTML += `
+                        <div class="bg-cardBg p-3.5 rounded-lg border border-borderColor hover:border-accent transition-all shadow-md">
+                            <div class="flex items-center justify-between border-b border-borderColor pb-2 mb-2">
+                                <div>
+                                    <h3 class="text-lg font-black text-brand tracking-wide truncate">${teamName}</h3>
+                                    ${teamTotalPP > 0 ? `<span class="text-xs text-accent font-semibold">${teamTotalPP.toLocaleString()} Total PP</span>` : ''}
+                                </div>
+                                ${teamXUrl ? `<a href="${teamXUrl}" target="_blank" class="bg-panelBg text-accent hover:text-brand border border-borderColor hover:border-brand px-2 py-0.5 rounded font-bold text-xs transition-all flex items-center gap-1 shrink-0"><span class="text-brand font-black">@</span> Team</a>` : ''}
+                            </div>
+                            <ul class="space-y-0.5">
+                                ${renderPlayerRow('Player 1', p1, p1PP, getVal(row, 'Player 1 X'), getVal(row, 'Player 1 Flag'), getVal(row, 'Player 1 Prev Team'))}
+                                ${renderPlayerRow('Player 2', p2, p2PP, getVal(row, 'Player 2 X'), getVal(row, 'Player 2 Flag'), getVal(row, 'Player 2 Prev Team'))}
+                                ${renderPlayerRow('Player 3', p3, p3PP, getVal(row, 'Player 3 X'), getVal(row, 'Player 3 Flag'), getVal(row, 'Player 3 Prev Team'))}
+                                ${renderPlayerRow('Player 4', p4, p4PP, getVal(row, 'Player 4 X'), getVal(row, 'Player 4 Flag'), getVal(row, 'Player 4 Prev Team'))}
+                                ${renderPlayerRow('Coach', getVal(row, 'Coach'), '', getVal(row, 'Coach X'), getVal(row, 'Coach Flag'), getVal(row, 'Coach Prev Team'))}
+                            </ul>
+                        </div>`;
+                });
+
+                teamList.sort((a, b) => b.pp - a.pp);
+                teamList.forEach((t, i) => {
+                    teamPointsCont.innerHTML += `
+                        <div class="flex items-center justify-between bg-cardBg p-4 rounded border-l-4 border-brand">
+                            <div class="flex items-center gap-4">
+                                <span class="text-xl font-bold text-accent">#${i + 1}</span>
+                                <h3 class="text-lg font-bold text-[#e2e2e2]">${t.name}</h3>
+                            </div>
+                            <div class="text-2xl font-black text-brand">${t.pp.toLocaleString()} PP</div>
+                        </div>`;
+                });
+
+                playerList.sort((a, b) => b.pp - a.pp);
+                playerList.forEach((p, i) => {
+                    playerPointsCont.innerHTML += `
+                        <div class="flex items-center justify-between bg-cardBg p-4 rounded border-l-4 border-brand">
+                            <div class="flex items-center gap-4">
+                                <span class="text-xl font-bold text-accent">#${i + 1}</span>
+                                <div>
+                                    <h3 class="text-lg font-bold text-[#e2e2e2]">${p.name}</h3>
+                                    <p class="text-sm text-[#8c8c8c]">${p.team}</p>
+                                </div>
+                            </div>
+                            <div class="text-2xl font-black text-brand">${p.pp.toLocaleString()} PP</div>
+                        </div>`;
+                });
+            });
+
+            // 2. Fetch DataHub (Standings & Stats from Dedicated Sheet)
+            fetchSheetData(DATAHUB_SHEET_ID, 'Sheet1', (data) => {
+                globalDataHub = data;
+                renderFilteredStandings('All');
+                renderFilteredStats('All');
+                document.getElementById('loading').classList.add('hidden');
+            });
+        }
+
+        window.renderFilteredStandings = function(filterVal) {
+            const teamStandings = globalDataHub.filter(r => getVal(r, 'Category').toLowerCase() === 'teamresult');
+            const playerStandings = globalDataHub.filter(r => getVal(r, 'Category').toLowerCase() === 'playerresult');
+
+            const tTbody = document.getElementById('team-standings-tbody');
+            const pTbody = document.getElementById('player-standings-tbody');
+            tTbody.innerHTML = '';
+            pTbody.innerHTML = '';
+
+            const fTeams = filterVal === 'All' ? teamStandings : teamStandings.filter(r => getVal(r, 'Event Name').toLowerCase() === filterVal.toLowerCase());
+            
+            const banner = document.getElementById('team-of-event-banner');
+            if (filterVal !== 'All' && fTeams.length > 0) {
+                let topTeam = fTeams.find(r => getVal(r, 'Placement') === '#1' || getVal(r, 'Placement') === '1');
+                if (!topTeam) {
+                    fTeams.sort((a, b) => (parseFloat(getVal(b, 'Points Earned')) || 0) - (parseFloat(getVal(a, 'Points Earned')) || 0));
+                    topTeam = fTeams[0];
+                }
+                
+                if (topTeam) {
+                    document.getElementById('toe-event-name').innerText = filterVal;
+                    document.getElementById('toe-team-name').innerText = getVal(topTeam, 'Name');
+                    document.getElementById('toe-placement').innerText = getVal(topTeam, 'Placement') || '#1';
+                    document.getElementById('toe-points').innerText = `+${getVal(topTeam, 'Points Earned') || '0'} PP`;
+                    banner.classList.remove('hidden');
+                } else {
+                    banner.classList.add('hidden');
+                }
+            } else {
+                banner.classList.add('hidden');
+            }
+
+            fTeams.forEach(r => {
+                tTbody.innerHTML += `
+                    <tr class="border-b border-borderColor hover:bg-[#20231d]">
+                        <td class="p-3 font-semibold">${getVal(r, 'Event Name')} <span class="block text-xs text-[#8c8c8c]">${getVal(r, 'Date')}</span></td>
+                        <td class="p-3 text-accent">${getVal(r, 'Event Type')}</td>
+                        <td class="p-3 text-[#e2e2e2]">${getVal(r, 'Name')}</td>
+                        <td class="p-3 font-bold text-accent">${getVal(r, 'Placement')}</td>
+                        <td class="p-3 text-brand font-bold">+${getVal(r, 'Points Earned') || '0'}</td>
+                    </tr>`;
+            });
+
+            const fPlayers = filterVal === 'All' ? playerStandings : playerStandings.filter(r => getVal(r, 'Event Name').toLowerCase() === filterVal.toLowerCase());
+            fPlayers.forEach(r => {
+                pTbody.innerHTML += `
+                    <tr class="border-b border-borderColor hover:bg-[#20231d]">
+                        <td class="p-3 font-semibold">${getVal(r, 'Event Name')} <span class="block text-xs text-[#8c8c8c]">${getVal(r, 'Date')}</span></td>
+                        <td class="p-3 text-accent">${getVal(r, 'Event Type')}</td>
+                        <td class="p-3 font-bold text-white">${getVal(r, 'Name')}</td>
+                        <td class="p-3 text-[#e2e2e2]">${getVal(r, 'Team')}</td>
+                        <td class="p-3 font-bold text-accent">${getVal(r, 'Placement')}</td>
+                        <td class="p-3 text-brand font-bold">+${getVal(r, 'Points Earned') || '0'}</td>
+                    </tr>`;
+            });
+        };
+
+        window.renderFilteredStats = function(filterVal) {
+            const statsData = globalDataHub.filter(r => getVal(r, 'Category').toLowerCase() === 'statistic');
+            const statsTbody = document.getElementById('stats-tbody');
+            statsTbody.innerHTML = '';
+            
+            const fStats = filterVal === 'All' ? statsData : statsData.filter(r => getVal(r, 'Event Name').toLowerCase() === filterVal.toLowerCase());
+
+            if (fStats.length === 0) {
+                statsTbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-[#8c8c8c]">No statistics recorded for this event.</td></tr>`;
+                return;
+            }
+
+            fStats.forEach(r => {
+                statsTbody.innerHTML += `
+                    <tr class="border-b border-borderColor hover:bg-[#20231d]">
+                        <td class="p-3 font-semibold text-accent">${getVal(r, 'Event Name') || '--'}</td>
+                        <td class="p-3 font-bold text-white">${getVal(r, 'Name')}</td>
+                        <td class="p-3 text-[#e2e2e2]">${getVal(r, 'Team')}</td>
+                        <td class="p-3 text-brand font-bold">${getVal(r, 'KD Ratio')}</td>
+                        <td class="p-3 text-[#8c8c8c]">${getVal(r, 'Objective Time')}</td>
+                        <td class="p-3">${getVal(r, 'Damage')}</td>
+                    </tr>`;
+            });
+        };
+
+        function updateStandingsFilter(val) {
+            window.renderFilteredStandings(val);
+        }
+
+        function updateStatsFilter(val) {
+            window.renderFilteredStats(val);
+        }
+
+        window.onload = initData;
+    </script>
+</body>
+</html>
