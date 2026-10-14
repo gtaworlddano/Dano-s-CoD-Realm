@@ -341,7 +341,7 @@
         const SHEET_ID = '1KqosWYRJCoXLYgML0df_o_V-4ZGHHIfvSUd5u4MueNw';
 
         function fetchSheetData(sheetName, callback) {
-            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${sheetName}`;
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&t=${Date.now()}`;
             Papa.parse(url, {
                 download: true,
                 header: true,
