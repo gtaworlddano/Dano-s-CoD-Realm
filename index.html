@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dano's Challengers Realm</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: '#4a6b3d', // Dark Green
+                        accent: '#a39171', // Tan
+                        darkBg: '#0a0b08', // Black
+                        cardBg: '#0f110d',
+                        panelBg: '#1a1c18',
+                        borderColor: '#2a2c26'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- PapaParse for reading the Google Sheet CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <style>
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .btn-active { background-color: #4a6b3d; color: white; box-shadow: 0 0 15px rgba(74,107,61,0.4); }
+        .btn-inactive { color: #8c8c8c; }
+        .btn-inactive:hover { background-color: #1a1c18; color: #a39171; }
+    </style>
+</head>
+<body class="bg-darkBg text-white font-sans selection:bg-brand selection:text-white min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-[#141512] border-b border-accent p-4 sticky top-0 z-10 shadow-lg">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <img src="https://www.upload.ee/image/19844951/Gemini_Generated_Image_ax952uax952uax95-removebg-preview.png" alt="Logo" class="h-16 w-16 object-contain drop-shadow-[0_0_8px_rgba(163,145,113,0.5)]">
+                <div>
+                    <h1 class="text-3xl font-black text-[#e2e2e2] tracking-wider uppercase">Dano's <span class="text-brand">Challengers</span> Realm</h1>
+                    <p class="text-sm text-accent font-semibold tracking-widest">NORTH AMERICAN CHALLENGERS</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="https://x.com/CoD_Dano" target="_blank" class="bg-cardBg border border-borderColor p-2 rounded hover:border-brand hover:bg-panelBg transition-colors flex items-center gap-2 text-accent hover:text-brand">
+                    <span class="w-6 h-6 bg-white rounded flex items-center justify-center p-0.5 shrink-0">
+                        <img src="https://pngimg.com/uploads/x_logo/x_logo_PNG17.png" alt="X" class="w-4 h-4 object-contain">
+                    </span>
+                    <span class="hidden md:inline font-semibold">@CoD_Dano</span>
+                </a>
+                <a href="https://discord.gg/78BXetCSpU" target="_blank" class="bg-cardBg border border-borderColor p-2 rounded hover:border-brand hover:bg-panelBg transition-colors flex items-center gap-2 text-accent hover:text-brand">
+                    <i class="fa-brands fa-discord text-xl"></i> <span class="hidden md:inline font-semibold">Join Discord</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 md:p-6">
+        <!-- Navigation Tabs -->
+        <nav class="flex flex-wrap gap-2 mb-8 bg-[#141512] p-2 rounded-lg border border-borderColor" id="tab-nav">
+            <button onclick="switchTab('rosters')" class="tab-btn btn-active flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 px-4 rounded font-bold transition-all duration-200" data-target="rosters">
+                <i class="fa-solid fa-users"></i> Rosters
+            </button>
+            <button onclick="switchTab('standings')" class="tab-btn btn-inactive flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 px-4 rounded font-bold transition-all duration-200" data-target="standings">
+                <i class="fa-solid fa-calendar"></i> Event Standings
+            </button>
+            <button onclick="switchTab('stats')" class="tab-btn btn-inactive flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 px-4 rounded font-bold transition-all duration-200" data-target="stats">
+                <i class="fa-solid fa-chart-simple"></i> Statistics
+            </button>
+            <button onclick="switchTab('points')" class="tab-btn btn-inactive flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 px-4 rounded font-bold transition-all duration-200" data-target="points">
+                <i class="fa-solid fa-trophy"></i> Pro Points
+            </button>
+            <button onclick="switchTab('feed')" class="tab-btn btn-inactive flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 px-4 rounded font-bold transition-all duration-200" data-target="feed">
+                <i class="fa-solid fa-message"></i> Rumors & News
+            </button>
+        </nav>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="text-center text-accent py-10 font-bold hidden">
+            <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2"></i><br>Syncing with Google Sheets...
+        </div>
+
+        <!-- Content: Rosters -->
+        <div id="rosters" class="tab-content active bg-panelBg border border-accent rounded-lg p-6">
+            <h2 class="text-2xl font-bold text-accent mb-6 flex items-center gap-2"><i class="fa-solid fa-users text-brand"></i> Current NA Rosters</h2>
+            <div id="rosters-container" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+        </div>
+
+        <!-- Content: Standings -->
+        <div id="standings" class="tab-content bg-panelBg border border-accent rounded-lg p-6">
+            <h2 class="text-2xl font-bold text-accent mb-6 flex items-center gap-2"><i class="fa-solid fa-calendar text-brand"></i> Event Standings</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[600px]">
+                    <thead>
+                        <tr class="bg-cardBg text-accent border-b-2 border-brand">
+                            <th class="p-3">Event Name</th><th class="p-3">Type</th><th class="p-3">Team Name</th><th class="p-3">Placement</th><th class="p-3">Points Earned</th>
+                        </tr>
+                    </thead>
+                    <tbody id="standings-tbody" class="text-[#e2e2e2]"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Content: Statistics (INTERACTIVE) -->
+        <div id="stats" class="tab-content bg-panelBg border border-accent rounded-lg p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                <h2 class="text-2xl font-bold text-accent flex items-center gap-2"><i class="fa-solid fa-chart-simple text-brand"></i> Statistics Engine</h2>
+                <div class="flex items-center gap-3">
+                    <label class="text-[#8c8c8c] font-bold text-sm">Select View:</label>
+                    <select id="event-filter" onchange="updateEventFilter(this.value)" class="bg-cardBg text-white border border-borderColor rounded p-2 focus:border-brand outline-none font-semibold">
+                        <option value="Overall">Overall Season Stats</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="stats-disclaimer" class="mb-6 p-3 bg-cardBg border-l-4 border-brand text-sm text-[#8c8c8c] rounded">
+                <i class="fa-solid fa-circle-info text-accent mr-1"></i> <span id="stats-disclaimer-text">Showing overall averages aggregated across all tracked events.</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[500px]">
+                    <thead>
+                        <tr class="bg-cardBg text-accent border-b-2 border-brand select-none">
+                            <th class="p-3 cursor-pointer hover:text-white transition-colors group" onclick="handleSort('Player Name')">Player Name <i id="sort-icon-PlayerName" class="sort-icon fa-solid fa-sort text-brand opacity-50 ml-1 text-sm group-hover:opacity-100"></i></th>
+                            <th class="p-3 cursor-pointer hover:text-white transition-colors group" onclick="handleSort('Team')">Team <i id="sort-icon-Team" class="sort-icon fa-solid fa-sort text-brand opacity-50 ml-1 text-sm group-hover:opacity-100"></i></th>
+                            <th class="p-3 cursor-pointer hover:text-white transition-colors group" onclick="handleSort('K/D Ratio')">K/D Ratio <i id="sort-icon-KDRatio" class="sort-icon fa-solid fa-sort text-brand opacity-50 ml-1 text-sm group-hover:opacity-100"></i></th>
+                            <th class="p-3 cursor-pointer hover:text-white transition-colors group" onclick="handleSort('Objective Time')">Objective Time <i id="sort-icon-ObjectiveTime" class="sort-icon fa-solid fa-sort text-brand opacity-50 ml-1 text-sm group-hover:opacity-100"></i></th>
+                            <th class="p-3 cursor-pointer hover:text-white transition-colors group" onclick="handleSort('Damage')">Damage <i id="sort-icon-Damage" class="sort-icon fa-solid fa-sort text-brand opacity-50 ml-1 text-sm group-hover:opacity-100"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-tbody" class="text-[#e2e2e2]"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Content: Pro Points -->
+        <div id="points" class="tab-content bg-panelBg border border-accent rounded-lg p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <h2 class="text-2xl font-bold text-accent flex items-center gap-2"><i class="fa-solid fa-trophy text-brand"></i> NA Pro Points Standings</h2>
+                <div class="flex bg-cardBg rounded-lg p-1 border border-borderColor">
+                    <button onclick="togglePointsView('team')" id="btn-team-points" class="px-4 py-2 rounded font-semibold transition-colors bg-brand text-white">Teams</button>
+                    <button onclick="togglePointsView('player')" id="btn-player-points" class="px-4 py-2 rounded font-semibold transition-colors text-[#8c8c8c] hover:text-accent">Players</button>
+                </div>
+            </div>
+            <div id="team-points-container" class="space-y-4"></div>
+            <div id="player-points-container" class="space-y-4 hidden"></div>
+        </div>
+
+        <!-- Content: Twitter Feed -->
+        <div id="feed" class="tab-content bg-panelBg border border-accent rounded-lg p-6">
+            <h2 class="text-2xl font-bold text-accent mb-6 flex items-center gap-2">
+                <span class="w-7 h-7 bg-white rounded flex items-center justify-center p-1 shrink-0">
+                    <img src="https://pngimg.com/uploads/x_logo/x_logo_PNG17.png" alt="X" class="w-4 h-4 object-contain">
+                </span> 
+                Rumors & News
+            </h2>
+            <div class="bg-cardBg rounded-lg border border-borderColor overflow-hidden mx-auto max-w-2xl flex justify-center">
+                <!-- CUSTOM X LIST EMBED -->
+                <a class="twitter-timeline" data-width="600" data-height="800" data-theme="dark" href="https://x.com/CoD_Dano/lists/2110374087444836571?ref_src=twsrc%5Etfw">An X List by CoD_Dano</a> 
+                <script async src="https://platform.x.com/widgets.js" charset="utf-8"></script>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 py-6 bg-[#141512] border-t border-borderColor text-center text-[#8c8c8c] text-sm">
+        &copy; 2026 Dano's Challengers Realm. Data tracking for the NA CoD Challengers scene.
+    </footer>
+
+    <script>
+        // --- TAB SWITCHING LOGIC ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('btn-active');
+                btn.classList.add('btn-inactive');
+            });
+            document.getElementById(tabId).classList.add('active');
+            document.querySelector(`.tab-btn[data-target="${tabId}"]`).classList.remove('btn-inactive');
+            document.querySelector(`.tab-btn[data-target="${tabId}"]`).classList.add('btn-active');
+        }
+
+        function togglePointsView(view) {
+            if(view === 'team') {
+                document.getElementById('team-points-container').classList.remove('hidden');
+                document.getElementById('player-points-container').classList.add('hidden');
+                document.getElementById('btn-team-points').className = "px-4 py-2 rounded font-semibold transition-colors bg-brand text-white";
+                document.getElementById('btn-player-points').className = "px-4 py-2 rounded font-semibold transition-colors text-[#8c8c8c] hover:text-accent";
+            } else {
+                document.getElementById('team-points-container').classList.add('hidden');
+                document.getElementById('player-points-container').classList.remove('hidden');
+                document.getElementById('btn-player-points').className = "px-4 py-2 rounded font-semibold transition-colors bg-brand text-white";
+                document.getElementById('btn-team-points').className = "px-4 py-2 rounded font-semibold transition-colors text-[#8c8c8c] hover:text-accent";
+            }
+        }
+
+        // --- FLEXIBLE COLUMN LOOKUP ---
+        function getVal(row, key) {
+            if (!row) return '';
+            const cleanKey = key.trim().toLowerCase();
+            for (let k in row) {
+                if (k && k.trim().toLowerCase() === cleanKey) {
+                    return row[k] ? row[k].toString().trim() : '';
+                }
+            }
+            return '';
+        }
+
+        function getXUrl(input) {
+            if(!input) return null;
+            input = input.toString().trim();
+            if(!input) return null;
+            if(input.startsWith('http://') || input.startsWith('https://')) return input;
+            if(input.startsWith('@')) input = input.substring(1);
+            return `https://x.com/${input}`;
+        }
+
+        function renderPlayerRow(label, name, xHandle) {
+            if(!name) return '';
+            const xUrl = getXUrl(xHandle);
+            return `
+                <li class="flex items-center justify-start gap-3 py-1.5 border-b border-borderColor/40 last:border-0">
+                    <span class="text-accent font-semibold text-sm w-20 shrink-0">${label}:</span>
+                    <span class="font-bold text-[#e2e2e2]">${name}</span>
+                    ${xUrl ? `<a href="${xUrl}" target="_blank" title="View on X" class="bg-white hover:bg-gray-200 p-1 rounded transition-all flex items-center justify-center w-5 h-5 shrink-0"><img src="https://pngimg.com/uploads/x_logo/x_logo_PNG17.png" alt="X" class="w-3.5 h-3.5 object-contain"></a>` : ''}
+                </li>`;
+        }
+
+        // --- STATISTICS ENGINE ---
+        let rawStatsData = [];
+        let currentStatsFilter = 'Overall';
+        let sortConfig = { key: null, direction: 'desc' };
+
+        function timeToSeconds(timeStr) {
+            if(!timeStr) return 0;
+            const parts = timeStr.toString().split(':');
+            if(parts.length === 2) return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+            return parseInt(timeStr) || 0;
+        }
+
+        function secondsToTime(totalSeconds) {
+            const m = Math.floor(totalSeconds / 60);
+            const s = Math.round(totalSeconds % 60);
+            return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        function renderStats() {
+            let displayData = [];
+            
+            if(currentStatsFilter === 'Overall') {
+                const playerMap = {};
+                rawStatsData.forEach(row => {
+                    const player = getVal(row, 'Player Name');
+                    if(!player) return;
+                    if(!playerMap[player]) {
+                        playerMap[player] = {
+                            'Player Name': player,
+                            'Team': getVal(row, 'Team'),
+                            kdSum: 0, dmgSum: 0, objSum: 0, count: 0
+                        };
+                    }
+                    playerMap[player].kdSum += parseFloat(getVal(row, 'K/D Ratio')) || 0;
+                    playerMap[player].dmgSum += parseFloat(getVal(row, 'Damage')) || 0;
+                    playerMap[player].objSum += timeToSeconds(getVal(row, 'Objective Time'));
+                    playerMap[player].count++;
+                    playerMap[player]['Team'] = getVal(row, 'Team');
+                });
+                
+                for(const p in playerMap) {
+                    const stat = playerMap[p];
+                    displayData.push({
+                        'Player Name': p,
+                        'Team': stat['Team'],
+                        'K/D Ratio': (stat.kdSum / stat.count).toFixed(2),
+                        'Damage': Math.round(stat.dmgSum / stat.count).toString(),
+                        'Objective Time': secondsToTime(stat.objSum / stat.count)
+                    });
+                }
+            } else {
+                displayData = rawStatsData.filter(row => getVal(row, 'Event Name') === currentStatsFilter);
+            }
+            
+            if(sortConfig.key) {
+                displayData.sort((a, b) => {
+                    let valA = a[sortConfig.key];
+                    let valB = b[sortConfig.key];
+                    
+                    if(sortConfig.key === 'Objective Time') {
+                        valA = timeToSeconds(valA); valB = timeToSeconds(valB);
+                    } else if(sortConfig.key === 'K/D Ratio' || sortConfig.key === 'Damage') {
+                        valA = parseFloat(valA) || 0; valB = parseFloat(valB) || 0;
+                    } else {
+                        valA = valA ? valA.toString().toLowerCase() : ''; 
+                        valB = valB ? valB.toString().toLowerCase() : '';
+                    }
+                    
+                    if(valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+                    if(valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            const tbody = document.getElementById('stats-tbody');
+            tbody.innerHTML = '';
+            displayData.forEach(row => {
+                tbody.innerHTML += `
+                    <tr class="border-b border-borderColor hover:bg-[#20231d] transition-colors">
+                        <td class="p-3 font-semibold">${getVal(row, 'Player Name')}</td>
+                        <td class="p-3 text-accent">${getVal(row, 'Team')}</td>
+                        <td class="p-3 text-brand font-bold">${getVal(row, 'K/D Ratio')}</td>
+                        <td class="p-3 text-[#8c8c8c]">${getVal(row, 'Objective Time')}</td>
+                        <td class="p-3">${getVal(row, 'Damage')}</td>
+                    </tr>`;
+            });
+        }
+
+        function handleSort(key) {
+            if(sortConfig.key === key) {
+                sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortConfig.key = key;
+                sortConfig.direction = 'desc';
+            }
+            
+            document.querySelectorAll('.sort-icon').forEach(icon => {
+                icon.className = 'sort-icon fa-solid fa-sort text-brand opacity-50 ml-1 text-sm group-hover:opacity-100';
+            });
+            
+            const safeKey = key.replace(/[^a-zA-Z]/g, '');
+            const activeIcon = document.getElementById('sort-icon-' + safeKey);
+            if(activeIcon) {
+                activeIcon.className = `sort-icon fa-solid fa-sort-${sortConfig.direction === 'asc' ? 'up' : 'down'} text-brand ml-1 text-sm`;
+            }
+            
+            renderStats();
+        }
+
+        function updateEventFilter(val) {
+            currentStatsFilter = val;
+            const disclaimerText = document.getElementById('stats-disclaimer-text');
+            if(val === 'Overall') {
+                disclaimerText.innerText = "Showing overall averages aggregated across all tracked events.";
+            } else {
+                disclaimerText.innerText = `Showing pure statistics exclusively from ${val}.`;
+            }
+            renderStats();
+        }
+
+        // --- DATA FETCHING ENGINE ---
+        const SHEET_ID = '1KqosWYRJCoXLYgML0df_o_V-4ZGHHIfvSUd5u4MueNw';
+
+        function fetchSheetData(sheetName, callback) {
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&t=${Date.now()}`;
+            Papa.parse(url, {
+                download: true,
+                header: true,
+                transformHeader: function(h) {
+                    return h ? h.trim() : '';
+                },
+                complete: function(results) { callback(results.data); },
+                error: function(error) { console.error("Error fetching data:", error); }
+            });
+        }
+
+        function initData() {
+            document.getElementById('loading').classList.remove('hidden');
+            
+            // 1. Fetch Rosters
+            fetchSheetData('Rosters', (data) => {
+                const container = document.getElementById('rosters-container');
+                container.innerHTML = '';
+                data.forEach(row => {
+                    const teamName = getVal(row, 'Team Name');
+                    if(!teamName) return;
+                    const teamXUrl = getXUrl(getVal(row, 'Team X'));
+                    
+                    const p1 = getVal(row, 'Player 1');
+                    const p1X = getVal(row, 'Player 1 X');
+                    const p2 = getVal(row, 'Player 2');
+                    const p2X = getVal(row, 'Player 2 X');
+                    const p3 = getVal(row, 'Player 3');
+                    const p3X = getVal(row, 'Player 3 X');
+                    const p4 = getVal(row, 'Player 4');
+                    const p4X = getVal(row, 'Player 4 X');
+                    const coach = getVal(row, 'Coach');
+                    const coachX = getVal(row, 'Coach X');
+
+                    container.innerHTML += `
+                        <div class="bg-cardBg p-5 rounded-lg border border-borderColor hover:border-accent transition-colors shadow-md">
+                            <div class="flex items-center justify-between border-b border-borderColor pb-3 mb-3">
+                                <h3 class="text-xl font-extrabold text-brand tracking-wide">${teamName}</h3>
+                                ${teamXUrl ? `<a href="${teamXUrl}" target="_blank" class="bg-white text-black hover:bg-gray-200 px-2.5 py-1 rounded font-bold text-xs transition-all flex items-center gap-1.5 shrink-0"><img src="https://pngimg.com/uploads/x_logo/x_logo_PNG17.png" alt="X" class="w-3.5 h-3.5 object-contain"> Team X</a>` : ''}
+                            </div>
+                            <ul class="space-y-1 text-sm">
+                                ${renderPlayerRow('Player 1', p1, p1X)}
+                                ${renderPlayerRow('Player 2', p2, p2X)}
+                                ${renderPlayerRow('Player 3', p3, p3X)}
+                                ${renderPlayerRow('Player 4', p4, p4X)}
+                                ${renderPlayerRow('Coach', coach, coachX)}
+                            </ul>
+                        </div>`;
+                });
+            });
+
+            // 2. Fetch Event Standings
+            fetchSheetData('Event Standings', (data) => {
+                const tbody = document.getElementById('standings-tbody');
+                tbody.innerHTML = '';
+                data.forEach(row => {
+                    const eventName = getVal(row, 'Event Name');
+                    if(!eventName) return;
+                    tbody.innerHTML += `
+                        <tr class="border-b border-borderColor hover:bg-[#20231d]">
+                            <td class="p-3 font-semibold">${eventName} <span class="block text-xs text-[#8c8c8c]">${getVal(row, 'Date')}</span></td>
+                            <td class="p-3 text-accent">${getVal(row, 'Event Type')}</td>
+                            <td class="p-3 text-[#e2e2e2]">${getVal(row, 'Team Name')}</td>
+                            <td class="p-3 font-bold text-accent">${getVal(row, 'Placement')}</td>
+                            <td class="p-3 text-brand font-bold">+${getVal(row, 'Points Earned') || '0'}</td>
+                        </tr>`;
+                });
+            });
+
+            // 3. Fetch Statistics
+            fetchSheetData('Statistics', (data) => {
+                rawStatsData = data.filter(r => getVal(r, 'Player Name')); 
+                const events = new Set();
+                rawStatsData.forEach(row => { 
+                    const ev = getVal(row, 'Event Name');
+                    if(ev) events.add(ev); 
+                });
+                const select = document.getElementById('event-filter');
+                select.innerHTML = '<option value="Overall">Overall Season Stats</option>';
+                events.forEach(ev => {
+                    const opt = document.createElement('option');
+                    opt.value = ev; opt.textContent = ev;
+                    select.appendChild(opt);
+                });
+                renderStats();
+            });
+
+            // 4. Fetch Team Pro Points
+            fetchSheetData('Team Pro Points', (data) => {
+                const container = document.getElementById('team-points-container');
+                container.innerHTML = '';
+                data.forEach((row, index) => {
+                    const teamName = getVal(row, 'Team Name');
+                    if(!teamName) return;
+                    container.innerHTML += `
+                        <div class="flex items-center justify-between bg-cardBg p-4 rounded border-l-4 border-brand">
+                            <div class="flex items-center gap-4">
+                                <span class="text-xl font-bold text-accent">#${index + 1}</span>
+                                <h3 class="text-lg font-bold text-[#e2e2e2]">${teamName}</h3>
+                            </div>
+                            <div class="text-2xl font-black text-brand">${getVal(row, 'Total Pro Points')} PP</div>
+                        </div>`;
+                });
+            });
+
+            // 5. Fetch Player Pro Points
+            fetchSheetData('Player Pro Points', (data) => {
+                const container = document.getElementById('player-points-container');
+                container.innerHTML = '';
+                data.forEach((row, index) => {
+                    const playerName = getVal(row, 'Player Name');
+                    if(!playerName) return;
+                    container.innerHTML += `
+                        <div class="flex items-center justify-between bg-cardBg p-4 rounded border-l-4 border-brand">
+                            <div class="flex items-center gap-4">
+                                <span class="text-xl font-bold text-accent">#${index + 1}</span>
+                                <div>
+                                    <h3 class="text-lg font-bold text-[#e2e2e2]">${playerName}</h3>
+                                    <p class="text-sm text-[#8c8c8c]">${getVal(row, 'Team')}</p>
+                                </div>
+                            </div>
+                            <div class="text-2xl font-black text-brand">${getVal(row, 'Total Pro Points')} PP</div>
+                        </div>`;
+                });
+                document.getElementById('loading').classList.add('hidden');
+            });
+        }
+
+        window.onload = initData;
+    </script>
+</body>
+</html>
