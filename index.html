@@ -466,8 +466,8 @@
             const rostersContainer = document.getElementById('rosters-container');
             rostersContainer.innerHTML = '';
 
-            globalTeamList = [];
-            globalPlayerList = [];
+            let rawTeamList = [];
+            let rawPlayerList = [];
 
             const validRows = globalRostersData.filter(row => getVal(row, 'Team Name'));
             validRows.sort((a, b) => {
@@ -483,7 +483,7 @@
                 const teamXUrl = getXUrl(teamXHandle);
                 const teamTotalPP = parseFloat(getVal(row, 'Team Total Pro Points')) || 0;
 
-                globalTeamList.push({ name: teamName, logo: teamLogo, pp: teamTotalPP });
+                rawTeamList.push({ name: teamName, logo: teamLogo, pp: teamTotalPP });
 
                 let players = [];
                 for (let i = 1; i <= 4; i++) {
@@ -497,7 +497,7 @@
                             flag: getVal(row, `Player ${i} Flag`),
                             prevTeam: getVal(row, `Player ${i} Prev Team`)
                         });
-                        globalPlayerList.push({ name: pName, team: teamName, pp: pPP, x: getVal(row, `Player ${i} X`) });
+                        rawPlayerList.push({ name: pName, team: teamName, pp: pPP, x: getVal(row, `Player ${i} X`) });
                     }
                 }
                 players.sort((a, b) => b.pp - a.pp);
@@ -562,6 +562,13 @@
                     </div>`;
             });
 
+            // Sort and assign permanent master rank index
+            rawTeamList.sort((a, b) => b.pp - a.pp);
+            globalTeamList = rawTeamList.map((t, idx) => ({ ...t, originalRank: idx + 1 }));
+
+            rawPlayerList.sort((a, b) => b.pp - a.pp);
+            globalPlayerList = rawPlayerList.map((p, idx) => ({ ...p, originalRank: idx + 1 }));
+
             filterRosters();
             filterPoints();
         }
@@ -600,13 +607,12 @@
             playerPointsCont.innerHTML = '';
 
             const filteredTeams = globalTeamList.filter(t => t.name.toLowerCase().includes(query));
-            filteredTeams.sort((a, b) => b.pp - a.pp);
 
-            filteredTeams.forEach((t, i) => {
+            filteredTeams.forEach((t) => {
                 teamPointsCont.innerHTML += `
                     <div class="flex items-center justify-between bg-cardBg p-4 rounded border-l-4 border-brand shadow">
                         <div class="flex items-center gap-4 min-w-0 flex-1 mr-4">
-                            <span class="text-xl font-bold text-accent w-6 shrink-0">#${i + 1}</span>
+                            <span class="text-xl font-bold text-accent w-10 shrink-0">#${t.originalRank}</span>
                             <div class="flex items-center gap-4 min-w-0 flex-1">
                                 ${t.logo ? `<img src="${t.logo}" alt="" class="w-12 h-12 object-contain rounded-lg bg-panelBg p-1 border border-borderColor shrink-0">` : '<div class="w-12 h-12 bg-panelBg rounded-lg flex items-center justify-center font-bold text-accent border border-borderColor shrink-0">#</div>'}
                                 <h3 class="text-base md:text-lg font-bold text-[#e2e2e2] whitespace-normal break-words leading-snug">${t.name}</h3>
@@ -617,13 +623,12 @@
             });
 
             const filteredPlayers = globalPlayerList.filter(p => p.name.toLowerCase().includes(query) || p.team.toLowerCase().includes(query));
-            filteredPlayers.sort((a, b) => b.pp - a.pp);
 
-            filteredPlayers.forEach((p, i) => {
+            filteredPlayers.forEach((p) => {
                 playerPointsCont.innerHTML += `
                     <div class="flex items-center justify-between bg-cardBg p-4 rounded border-l-4 border-brand shadow">
                         <div class="flex items-center gap-4">
-                            <span class="text-xl font-bold text-accent">#${i + 1}</span>
+                            <span class="text-xl font-bold text-accent w-10 shrink-0">#${p.originalRank}</span>
                             <div>
                                 <h3 class="text-lg font-bold text-[#e2e2e2]">${p.name}</h3>
                                 <p class="text-sm text-[#8c8c8c]">${p.team}</p>
@@ -837,6 +842,7 @@
 
                     const matchedPlayer = globalPlayerList.find(p => p.name.toLowerCase() === faName.toLowerCase());
                     const faPP = matchedPlayer ? matchedPlayer.pp : 0;
+                    const faRank = matchedPlayer ? matchedPlayer.originalRank : '--';
 
                     faContainer.innerHTML += `
                         <div class="flex items-center justify-between bg-cardBg p-4 rounded border-l-4 border-accent shadow">
@@ -849,7 +855,7 @@
                                         ${faName}
                                         ${faCleanHandle ? `<a href="${faXUrl}" target="_blank" class="text-xs text-accent hover:text-brand font-semibold">${faCleanHandle}</a>` : ''}
                                     </h3>
-                                    <p class="text-xs text-[#8c8c8c]">Status: <span class="text-accent font-semibold uppercase">Free Agent</span></p>
+                                    <p class="text-xs text-[#8c8c8c]">Status: <span class="text-accent font-semibold uppercase">Free Agent</span> (Rank #${faRank})</p>
                                 </div>
                             </div>
                             <div class="text-xl font-black text-brand">${faPP.toLocaleString()} PP</div>
